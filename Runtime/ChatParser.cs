@@ -1,34 +1,37 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace BGSulz.ChatCommander
 {
     public static class ChatParser
     {
-        public static string Prefix { get; set; } = "!";
+        private static readonly string[] DefaultPrefixes = { "!" };
 
-        public static void Submit(in string input, in string user = default, in string prefix = null)
+        public static void Submit(in string input, in string user = default)
         {
-            var usePrefix = prefix ?? Prefix;
+            var usePrefixes = DefaultPrefixes;
             
             var noDoubleSpaces = input.ReplaceAll("  ", " ");
             var split = noDoubleSpaces.Split(' ');
 
             var indexedCommands = split
+                .Select(x => x.RemovePrefixAny(usePrefixes))
+                .Where(x => x != null)
                 .Select((s, i) => (word: s, index: i))
-                .Where(x => x.word.StartsWith(usePrefix) && x.word.Length > usePrefix.Length)
                 .ToArray();
 
             for (var (i, len) = (0, indexedCommands.Length); i < len; i++)
             {
-                var (rawWord, index) = indexedCommands[i];
+                var (word, index) = indexedCommands[i];
 
                 var startIndex = index + 1;
                 var endIndex = i == len - 1 ? split.Length : indexedCommands[i + 1].index;
 
-                var word = rawWord[usePrefix.Length..];
                 var args = split[startIndex..endIndex];
 
+                Debug.Log($"Sending {word}");
                 ChatResponderManager.Process(new CommandMessage(word, args, user));
             }
         }
@@ -42,5 +45,11 @@ namespace BGSulz.ChatCommander
                 input = input.Replace(toReplace, toReplaceWith);
             return input;
         }
+
+        private static string RemovePrefixAny(this string input, IEnumerable<string> prefixes) =>
+            prefixes
+                .Where(prefix => input.StartsWith(prefix) && input.Length > prefix.Length)
+                .Select(prefix => input[prefix.Length..])
+                .FirstOrDefault();
     }
 }

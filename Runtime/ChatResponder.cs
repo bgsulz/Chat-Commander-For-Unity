@@ -8,7 +8,7 @@ namespace BGSulz.ChatCommander
 {
     public abstract class ChatResponder : MonoBehaviour
     {
-        public class CommandInvocation
+        private class CommandInvocation
         {
             private readonly float _duration;
             private readonly Coroutine _coroutine;
@@ -74,6 +74,7 @@ namespace BGSulz.ChatCommander
             {
                 Deactivate(_activeMsg);
                 Active = false;
+                return;
             }
             
             _activeCommand = new CommandInvocation(this, seconds, () =>
